@@ -1,0 +1,14 @@
+name: Require successful jobs
+description: Fail the aggregate CI gate unless every dependency succeeded.
+inputs:
+  results:
+    description: JSON object produced by toJSON(needs).
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        JOB_RESULTS: ${{ inputs.results }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: python3 "$ACTION_PATH/check.py"

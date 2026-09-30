@@ -1,0 +1,10 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Update the Cloudflare Workers build and test SDKs together.",
+  "packageRules": [
+    {
+      "matchPackageNames": ["wrangler", "@cloudflare/vite-plugin", "@cloudflare/vitest-pool-workers"],
+      "groupName": "cloudflare workers sdk"
+    }
+  ]
+}

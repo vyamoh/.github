@@ -1,0 +1,53 @@
+name: Dependency audit
+
+on:
+  workflow_call:
+    inputs:
+      working-directories:
+        type: string
+        default: '["."]'
+      node-version-file:
+        type: string
+        default: .nvmrc
+      node-version:
+        type: string
+        default: ''
+      package-json-file:
+        type: string
+        default: package.json
+      pnpm-version:
+        type: string
+        default: ''
+      audit-level:
+        type: string
+        default: high
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(inputs.working-directories) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+        with:
+          version: ${{ inputs.pnpm-version }}
+          package_json_file: ${{ inputs.package-json-file }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ inputs.node-version }}
+          node-version-file: ${{ inputs.node-version == '' && inputs.node-version-file || '' }}
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        working-directory: ${{ matrix.directory }}
+      - run: pnpm audit --audit-level "$AUDIT_LEVEL"
+        working-directory: ${{ matrix.directory }}
+        env:
+          AUDIT_LEVEL: ${{ inputs.audit-level }}
