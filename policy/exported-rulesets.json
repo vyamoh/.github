@@ -122,6 +122,7 @@
         "include": [
           "ayana",
           "movies",
+          "papers",
           "vatya"
         ],
         "exclude": [],

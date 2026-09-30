@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -23,6 +24,15 @@ jobs:
           persist-credentials: false
       - run: python3 -m unittest discover -s tests -v
       - run: python3 scripts/validate_config.py
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check zizmor==1.30.1
+          .venv/bin/zizmor --offline --min-severity medium .github/workflows
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+      - run: npm exec --yes --package=renovate@44.108.1 -- renovate-config-validator --strict renovate-config.json renovate-node.json renovate-cloudflare.json
   ci:
     name: ci
     needs: validate
