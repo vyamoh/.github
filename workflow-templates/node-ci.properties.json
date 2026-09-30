@@ -1,0 +1,7 @@
+{
+  "name": "Vyamoh Node CI",
+  "description": "Node/pnpm checks with the shared required ci gate. Requires .nvmrc, a packageManager field and lint/typecheck/test/build scripts.",
+  "iconName": "octicon check-circle",
+  "categories": ["JavaScript", "TypeScript"],
+  "filePatterns": ["package.json$"]
+}

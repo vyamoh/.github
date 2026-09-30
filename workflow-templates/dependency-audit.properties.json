@@ -1,0 +1,7 @@
+{
+  "name": "Vyamoh dependency audit",
+  "description": "Weekly high-severity pnpm audit using shared automation. Extend working-directories for independent workspaces.",
+  "iconName": "octicon shield-check",
+  "categories": ["JavaScript", "TypeScript"],
+  "filePatterns": ["pnpm-lock.yaml$"]
+}

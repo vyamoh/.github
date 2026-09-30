@@ -56,7 +56,7 @@
     "papers": {
       "ci": "ci",
       "socket": true,
-      "swarm": false,
+      "swarm": true,
       "extra_checks": [],
       "retire_rulesets": [
         20250254
