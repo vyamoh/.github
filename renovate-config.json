@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Vyamoh dependency policy: seven-day age floor, reviewed major updates, and reproducible lockfiles.",
+  "extends": ["config:recommended"],
+  "timezone": "America/Los_Angeles",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "rangeStrategy": "replace",
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "vulnerabilityAlerts": {"enabled": true, "minimumReleaseAge": null},
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev dependencies"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "github actions"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["!/^vyamoh\//"],
+      "pinDigests": true
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "matchPackageNames": ["typescript", "@typescript/native", "@typescript/typescript6"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

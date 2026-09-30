@@ -1,0 +1,7 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Require explicit approval for Node runtime updates.",
+  "packageRules": [
+    {"matchManagers": ["nvm"], "dependencyDashboardApproval": true}
+  ]
+}
