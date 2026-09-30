@@ -1,0 +1,105 @@
+{
+  "organization": "vyamoh",
+  "defaults": {
+    "settings": {
+      "allow_merge_commit": false,
+      "allow_squash_merge": false,
+      "allow_rebase_merge": true,
+      "allow_auto_merge": true,
+      "delete_branch_on_merge": true,
+      "allow_update_branch": true
+    },
+    "dependabot_alerts": true,
+    "workflow_permissions": {
+      "default_workflow_permissions": "read",
+      "can_approve_pull_request_reviews": false
+    }
+  },
+  "repositories": {
+    ".github": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": []
+    },
+    "movies": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": true,
+      "extra_checks": [
+        "Spec Review Gate"
+      ],
+      "retire_rulesets": [
+        18702756
+      ]
+    },
+    "vatya": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": true,
+      "extra_checks": [
+        "Version check"
+      ],
+      "retire_rulesets": [
+        22375715
+      ],
+      "strict": true
+    },
+    "avidya": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": []
+    },
+    "papers": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": [
+        20250254
+      ]
+    },
+    "vyamoh": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": []
+    },
+    "ayana": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": true,
+      "extra_checks": [],
+      "retire_rulesets": [
+        23126069
+      ]
+    },
+    "review-swarm": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": [
+        23225995
+      ]
+    },
+    "yukti": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": []
+    },
+    "vyakriti": {
+      "ci": "ci",
+      "socket": true,
+      "swarm": false,
+      "extra_checks": [],
+      "retire_rulesets": []
+    }
+  }
+}
