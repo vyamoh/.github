@@ -36,7 +36,7 @@ def request(url, token=None, body=None, method=None):
         raise RuntimeError("Provider connection failed") from None
 
 
-def load_secrets():
+def load_secrets(include_blacksmith=False):
     credential = Path(os.environ["CREDENTIALS_DIRECTORY"]) / "infisical.env"
     values = {}
     for line in credential.read_text().splitlines():
@@ -57,10 +57,12 @@ def load_secrets():
         "secretPath": values["INFISICAL_SECRET_PATH"],
         "includeImports": "false", "recursive": "false", "expandSecretReferences": "false"})
     secrets = request(domain + "/api/v4/secrets?" + query, auth["accessToken"])["secrets"]
-    wanted = {"GITHUB_APP_PRIVATE_KEY", "BLACKSMITH_ORG_TOKEN"}
+    wanted = {"GITHUB_APP_PRIVATE_KEY"}
+    if include_blacksmith:
+        wanted.add("BLACKSMITH_ORG_TOKEN")
     result = {s["secretKey"]: s["secretValue"] for s in secrets if s["secretKey"] in wanted}
-    if set(result) != wanted or not all(result.values()):
-        raise ValueError("Required provider credentials are missing")
+    if not result.get("GITHUB_APP_PRIVATE_KEY"):
+        raise ValueError("GitHub App credential is missing")
     return result
 
 

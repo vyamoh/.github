@@ -2,9 +2,16 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 
 
 def main():
+    memory = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
+    available = int(memory["MemAvailable"].split()[0]) * 1024
+    free = min(shutil.disk_usage(path).free for path in ("/var/lib", "/var/log"))
+    print(f"Host available RAM={available} free disk={free}", flush=True)
+    if available < 1024**3 or free < 5 * 1024**3:
+        raise RuntimeError("Host resource reserve is low; deferring worker registration")
     subprocess.run(["systemctl", "start", "vyamoh-ci-broker.service"], check=True)
     source = Path("/var/lib/vyamoh-ci-router/jit.json")
     jit = json.loads(source.read_text())["jit"]

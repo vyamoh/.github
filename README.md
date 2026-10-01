@@ -137,6 +137,7 @@ the workflow linters. The workflow security gate fails medium/high findings;
 low-severity syntax migration suggestions are advisory. Package advisories found
 by consumer audits must be fixed or explicitly assessed in those repositories;
 the common threshold must not be lowered to hide them.
-# Cost-aware runner pilot
+
+## Cost-aware runner pilot
 
 The [runner controller and installation guide](runner/README.md) describes the isolated DO worker, usage-based Linux routing, and staged smoke verification. Consumer workflows migrate only after the pilot passes.

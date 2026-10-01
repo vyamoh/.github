@@ -2,6 +2,9 @@ import copy
 from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
+import os
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 import unittest
 
@@ -10,6 +13,46 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("runner_policy", ROOT / "runner/policy.py")
 policy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy)
+
+provider_spec = importlib.util.spec_from_file_location("runner_providers", ROOT / "runner/providers.py")
+providers = importlib.util.module_from_spec(provider_spec)
+provider_spec.loader.exec_module(providers)
+
+
+class CredentialTests(unittest.TestCase):
+    def load(self, secrets, include_blacksmith=False, lifetime=3600):
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "infisical.env").write_text(
+                "INFISICAL_DOMAIN=https://app.infisical.com\n"
+                "INFISICAL_PROJECT_ID=project\nINFISICAL_ENVIRONMENT=prod\n"
+                "INFISICAL_SECRET_PATH=/runner-router\nINFISICAL_CLIENT_ID=client\n"
+                "INFISICAL_CLIENT_SECRET=literal$secret\n")
+            with patch.dict(os.environ, {"CREDENTIALS_DIRECTORY": directory}):
+                with patch.object(providers, "request", side_effect=[
+                    {"expiresIn": lifetime, "accessToken": "test-token"},
+                    {"secrets": [{"secretKey": key, "secretValue": value} for key, value in secrets.items()]}
+                ]) as request:
+                    result = providers.load_secrets(include_blacksmith)
+                    self.assertEqual(request.call_args_list[0].kwargs["body"]["clientSecret"], "literal$secret")
+                    self.assertIn("includeImports=false", request.call_args_list[1].args[0])
+                    self.assertIn("recursive=false", request.call_args_list[1].args[0])
+                    return result
+
+    def test_broker_does_not_require_or_return_blacksmith_secret(self):
+        self.assertEqual(self.load({"GITHUB_APP_PRIVATE_KEY": "key"}), {"GITHUB_APP_PRIVATE_KEY": "key"})
+        self.assertEqual(self.load({"GITHUB_APP_PRIVATE_KEY": "key", "BLACKSMITH_ORG_TOKEN": "token"}),
+                         {"GITHUB_APP_PRIVATE_KEY": "key"})
+
+    def test_missing_blacksmith_token_allows_github_fallback(self):
+        self.assertEqual(self.load({"GITHUB_APP_PRIVATE_KEY": "key"}, True), {"GITHUB_APP_PRIVATE_KEY": "key"})
+
+    def test_long_lived_access_token_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self.load({"GITHUB_APP_PRIVATE_KEY": "key"}, lifetime=3601)
+
+    def test_missing_app_key_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self.load({"BLACKSMITH_ORG_TOKEN": "token"})
 
 
 class RoutingTests(unittest.TestCase):

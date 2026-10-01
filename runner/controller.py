@@ -8,7 +8,7 @@ from providers import GitHub, blacksmith_usage, load_secrets
 
 def main():
     config = json.loads(Path("/opt/vyamoh-ci/config.json").read_text())
-    secrets = load_secrets()
+    secrets = load_secrets(include_blacksmith=True)
     github = GitHub(config, secrets["GITHUB_APP_PRIVATE_KEY"])
     now = datetime.now(timezone.utc)
     blacksmith = usage = budgets = None

@@ -3,6 +3,7 @@ Description=Vyamoh isolated ephemeral light worker
 After=network-online.target
 
 [Service]
+LogNamespace=vyamoh-ci
 Type=exec
 User=vyamoh-ci
 Group=vyamoh-ci
@@ -13,8 +14,8 @@ Environment=PATH=/usr/bin:/bin
 Environment=PYTHONDONTWRITEBYTECODE=1
 LoadCredential=jit:/run/vyamoh-ci-cycle/jit
 TemporaryFileSystem=/var/lib/vyamoh-ci:rw,size=1G,mode=0700,uid=997,gid=987
-BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/bin:/var/lib/vyamoh-ci/runner/bin
-BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/externals:/var/lib/vyamoh-ci/runner/externals
+BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/bin:/var/lib/vyamoh-ci/bin
+BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/externals:/var/lib/vyamoh-ci/externals
 ExecStart=/usr/bin/python3 /opt/vyamoh-ci/runner/worker.py
 InaccessiblePaths=/etc/vyamoh-ci-router /var/lib/vyamoh-ci-router /run/user /run/vyamoh-ci-cycle
 InaccessiblePaths=-/etc/restic -/var/backups -/var/log -/run/dbus -/run/docker.sock
