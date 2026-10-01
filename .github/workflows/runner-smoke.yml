@@ -24,6 +24,7 @@ jobs:
           persist-credentials: false
       - name: Check host and credential isolation
         run: |
+          set -x
           test "$(id -u)" = 997
           test ! -r /etc/vyamoh-ci-router/infisical.env
           test ! -r /var/lib/vyamoh-ci-router/jit.json
