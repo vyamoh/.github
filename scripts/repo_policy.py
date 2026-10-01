@@ -208,8 +208,12 @@ def successful_contexts(api, org, name, sha):
     for run in api.pages(f"repos/{org}/{name}/commits/{sha}/check-runs", "check_runs"):
         if run.get("conclusion") == "success":
             contexts.add((run["name"], run.get("app", {}).get("id")))
-    for status in api.request(f"repos/{org}/{name}/commits/{sha}/status")["statuses"]:
-        if status["state"] == "success" and status.get("creator", {}).get("login") == "github-actions[bot]":
+    seen_statuses = set()
+    for status in api.pages(f"repos/{org}/{name}/commits/{sha}/statuses"):
+        if status["context"] in seen_statuses:
+            continue
+        seen_statuses.add(status["context"])
+        if status["state"] == "success" and (status.get("creator") or {}).get("login") == "github-actions[bot]":
             contexts.add((status["context"], ACTIONS_APP))
     return contexts
 

@@ -132,6 +132,62 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(policy.desired_rulesets(self.config), expected)
 
 
+class StatusApi(policy.GitHub):
+    def __init__(self, status_pages, check_runs=None):
+        self.status_pages = status_pages
+        self.check_runs = check_runs or []
+        self.requests = []
+
+    def request(self, endpoint, method="GET", body=None):
+        self.requests.append(endpoint)
+        if "/check-runs?" in endpoint:
+            return {"check_runs": self.check_runs}
+        if "/statuses?" in endpoint:
+            return self.status_pages.get(int(endpoint.rsplit("page=", 1)[1]), [])
+        if endpoint.endswith("/status"):
+            return {"statuses": [{"context": "Swarm approval", "state": "success"}]}
+        raise AssertionError(endpoint)
+
+
+class StatusTests(unittest.TestCase):
+    def status(self, state="success", creator="github-actions[bot]", context="Swarm approval"):
+        return {"context": context, "state": state, "creator": {"login": creator}}
+
+    def test_detailed_status_creator_is_required_for_swarm_approval(self):
+        api = StatusApi({1: [self.status()]})
+        self.assertIn(("Swarm approval", policy.ACTIONS_APP),
+                      policy.successful_contexts(api, "vyamoh", "vatya", "head"))
+        self.assertFalse(any(endpoint.endswith("/status") for endpoint in api.requests))
+
+    def test_latest_failure_or_pending_status_blocks_stale_success(self):
+        for state in ("failure", "pending"):
+            with self.subTest(state=state):
+                api = StatusApi({1: [self.status(state), self.status()]})
+                self.assertNotIn(("Swarm approval", policy.ACTIONS_APP),
+                                 policy.successful_contexts(api, "vyamoh", "vatya", "head"))
+
+    def test_untrusted_latest_creator_blocks_stale_trusted_success(self):
+        api = StatusApi({1: [self.status(creator="someone-else"), self.status()]})
+        self.assertNotIn(("Swarm approval", policy.ACTIONS_APP),
+                         policy.successful_contexts(api, "vyamoh", "vatya", "head"))
+
+    def test_statuses_are_paginated_and_check_app_ids_are_preserved(self):
+        first_page = [self.status(creator="someone-else", context=f"other-{index}")
+                      for index in range(100)]
+        checks = [
+            {"name": "ci", "conclusion": "success", "app": {"id": policy.ACTIONS_APP}},
+            {"name": policy.SOCKET_CHECKS[0], "conclusion": "success", "app": {"id": policy.SOCKET_APP}},
+        ]
+        api = StatusApi({1: first_page, 2: [self.status()]}, checks)
+        self.assertEqual(policy.successful_contexts(api, "vyamoh", "vatya", "head"), {
+            ("ci", policy.ACTIONS_APP),
+            (policy.SOCKET_CHECKS[0], policy.SOCKET_APP),
+            ("Swarm approval", policy.ACTIONS_APP),
+        })
+        self.assertTrue(any(endpoint.endswith("/statuses?per_page=100&page=2")
+                            for endpoint in api.requests))
+
+
 class GateTests(unittest.TestCase):
     def test_all_jobs_must_succeed(self):
         self.assertEqual(gate.failures({"test": {"result": "success"}}), [])
