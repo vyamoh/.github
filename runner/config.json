@@ -10,6 +10,22 @@
   "state_ttl_seconds": 600,
   "runner_group": "vyamoh-do-light",
   "runner_name": "t3-remote-light",
-  "runner_labels": ["self-hosted", "Linux", "X64", "vyamoh-do-light"],
-  "repository_ids": [1398819082]
+  "runner_labels": [
+    "self-hosted",
+    "Linux",
+    "X64",
+    "vyamoh-do-light"
+  ],
+  "repository_ids": [
+    1398819082,
+    1369006932,
+    1298650236,
+    1367952258,
+    1285406427,
+    1313169960,
+    1391543270,
+    1312511663,
+    1378064819,
+    1318223173
+  ]
 }

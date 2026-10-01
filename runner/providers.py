@@ -92,7 +92,8 @@ class GitHub:
     def pages(self, path, key):
         results = []
         for page in range(1, 101):
-            result = self.call(f"{path}?per_page=100&page={page}")[key]
+            separator = "&" if "?" in path else "?"
+            result = self.call(f"{path}{separator}per_page=100&page={page}")[key]
             results.extend(result)
             if len(result) < 100:
                 return results

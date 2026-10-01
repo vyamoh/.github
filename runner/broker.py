@@ -1,13 +1,12 @@
 import json
 import os
 from pathlib import Path
+from urllib.parse import quote
 
 from providers import GitHub, load_secrets
 
 
-def main():
-    config = json.loads(Path("/opt/vyamoh-ci/config.json").read_text())
-    api = GitHub(config, load_secrets()["GITHUB_APP_PRIVATE_KEY"])
+def ensure_group(api, config):
     base = f"orgs/{api.org}/actions"
     groups = [g for g in api.pages(base + "/runner-groups", "runner_groups")
               if g["name"] == config["runner_group"]]
@@ -23,8 +22,17 @@ def main():
         raise ValueError("Runner group access changed; refusing registration")
     repos = api.pages(base + f"/runner-groups/{group['id']}/repositories", "repositories")
     if {r["id"] for r in repos} != set(config["repository_ids"]):
-        raise ValueError("Runner group repositories differ from reviewed configuration")
-    for runner in api.pages(base + "/runners", "runners"):
+        api.call(base + f"/runner-groups/{group['id']}/repositories",
+                 {"selected_repository_ids": config["repository_ids"]}, "PUT")
+    return group
+
+
+def main():
+    config = json.loads(Path("/opt/vyamoh-ci/config.json").read_text())
+    api = GitHub(config, load_secrets()["GITHUB_APP_PRIVATE_KEY"])
+    base = f"orgs/{api.org}/actions"
+    group = ensure_group(api, config)
+    for runner in api.pages(base + "/runners?name=" + quote(config["runner_name"], safe=""), "runners"):
         if runner["name"] == config["runner_name"]:
             if runner["status"] != "offline" or runner["busy"]:
                 raise ValueError("Previous runner still online; retry after it disconnects")

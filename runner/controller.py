@@ -1,9 +1,17 @@
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 from policy import decide, month_start
 from providers import GitHub, blacksmith_usage, load_secrets
+
+
+def write_state(state, destination):
+    temporary = destination.with_suffix(".new")
+    temporary.write_text(json.dumps(state, separators=(",", ":")))
+    os.chmod(temporary, 0o644)
+    temporary.replace(destination)
 
 
 def main():
@@ -25,6 +33,7 @@ def main():
     override = github.variable("CI_ROUTING_OVERRIDE") or "automatic"
     state = decide(config, now, blacksmith, usage, budgets, override)
     github.publish(state)
+    write_state(state, Path("/run/vyamoh-ci-routing/state.json"))
     print(json.dumps(state), flush=True)
 
 

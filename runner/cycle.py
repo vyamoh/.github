@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import subprocess
 import shutil
+import time
 
 
 def main():
@@ -29,4 +30,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        print(f"Runner cycle deferred ({type(error).__name__})", flush=True)
+        time.sleep(28)
+        raise SystemExit(1) from None

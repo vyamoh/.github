@@ -26,8 +26,11 @@ permissions:
   contents: read
 
 jobs:
+  routing:
+    uses: ./.github/workflows/runner-select.yml
   audit:
-    runs-on: ubuntu-24.04
+    needs: routing
+    runs-on: ${{ fromJSON(needs.routing.outputs.runner) }}
     timeout-minutes: 15
     strategy:
       fail-fast: false

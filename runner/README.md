@@ -1,6 +1,6 @@
 # Cost-aware Linux runners
 
-This is the infrastructure pilot. Existing repository workflows and required checks remain on their current runners until the live smoke test passes. Only `.github` can use the new runner group initially.
+The pilot passed isolation, fresh-job cleanup and real Blacksmith/GitHub routing tests. This rollout configuration admits all ten existing private organization repositories. Deploy the reviewed server configuration before releasing the routed audit or publishing consumer workflow PRs.
 
 | Work | Route |
 | --- | --- |
@@ -15,7 +15,7 @@ Heavy jobs do not fall back to this small droplet until measured and explicitly 
 
 `config.json` is the reviewed policy, installed root-owned at `/opt/vyamoh-ci/config.json`.
 
-- `CI_ROUTING_STATE`: private-repository organization variable, written by the controller every two minutes. Contains backend, UTC month, generation/expiry timestamps and observed usage. A single JSON value avoids partially published routing decisions. It expires after ten minutes and cannot carry over a month boundary.
+- `CI_ROUTING_STATE`: private-repository organization variable, written by the controller every two minutes. Contains backend, UTC month, generation/expiry timestamps and observed usage. A single JSON value avoids partially published routing decisions. It expires after ten minutes and cannot carry over a month boundary. Selectors prefer the controller’s atomic read-only-to-jobs `/run/vyamoh-ci-routing/state.json`, so queued workflows read fresh state when their selector actually runs. The organization variable remains a status display and a bounded compatibility fallback for the pilot deployment. An existing stale/invalid local file fails closed rather than falling back.
 - `CI_ROUTING_OVERRIDE`: optional organization variable: `automatic` (default), `github`, `blacksmith`, or `blocked`. A provider override still requires valid usage and its allowance. Unknown values block heavy work. This is a temporary operational switch, not permission to exceed a budget.
 - `CI_RUNNER_SMOKE_ENABLED`: `.github` repository variable, `true` only while testing the pilot. Enables `Runner smoke test` on PRs and manual dispatch.
 
@@ -31,7 +31,7 @@ These reserves are conservative estimates, not reservations. Provider reports ca
 
 `vyamoh-ci-router.timer` runs the usage controller as `vyamoh-ci-router`. `vyamoh-ci-cycle.service` is a small root-owned lifecycle coordinator: it starts the fixed broker service, copies a single-use runner credential, waits for the fixed worker service, and stops the entire worker cgroup. It accepts no job-supplied paths or commands.
 
-The broker authenticates afresh with Infisical and the GitHub App, registers a JIT runner, and refuses a duplicate online runner or unexpected runner-group access. It can remove only the offline registration matching this worker's fixed name. The runner is ephemeral and handles one job. A previous offline registration is cleaned up before retrying. The group starts selected/private-only with `.github`'s repository ID.
+The broker authenticates afresh with Infisical and the GitHub App, registers a JIT runner, and refuses a duplicate online runner or a public or non-selected runner group. It reconciles selected repository membership from the root-owned reviewed configuration and can remove only the offline registration matching this worker's fixed name. The runner is ephemeral and handles one job. A previous offline registration is cleaned up before retrying. The group stays selected/private-only. The root-owned configuration is authoritative for repository IDs; manual membership changes are reverted at the next registration. Runner lookups filter by the exact worker name rather than paging through Blacksmith registrations. Successful cycles restart after two seconds; failed cycles wait thirty seconds.
 
 `vyamoh-ci-worker.service` runs as `vyamoh-ci`, with no sudo, host Docker socket or provider credentials. It has one CPU, 768 MiB memory soft pressure, 1 GiB RAM maximum, 512 MiB swap maximum and 256 tasks. Its home, workspace, tool cache and temporary files live in fresh bounded storage; runner binaries are mounted read-only. Systemd removes this storage and kills descendant processes at job completion or the one-hour service limit. A separate `vyamoh-ci` journal is rate-limited, capped at 64 MiB persistent/16 MiB runtime storage, and retained for at most seven days. New worker cycles require 5 GiB free disk and 1 GiB available RAM; failures retry without running work. No persistent runner cache is shared between jobs. The worker refuses startup unless its root is a tmpfs limited to 1 GiB. Do not add a matching `ReadWritePaths` entry: systemd 255 gives it precedence over `TemporaryFileSystem`, exposing the persistent host directory instead.
 
@@ -52,7 +52,7 @@ The GitHub runner is pinned at 2.337.0. Blacksmith's published `latest` Linux ar
 
 After installation:
 
-1. Verify `systemctl status vyamoh-ci-{router,cycle,worker}` and `journalctl --namespace=vyamoh-ci -u vyamoh-ci-router -u vyamoh-ci-broker`. Do not print credentials or runner diagnostic credential files.
+1. Verify `gh`, `jq` and `python3` are installed for light gates. Verify `systemctl status vyamoh-ci-{router,cycle,worker}` and `journalctl --namespace=vyamoh-ci -u vyamoh-ci-router -u vyamoh-ci-broker`. Do not print credentials or runner diagnostic credential files.
 2. Verify the runner group contains only `.github` and the worker is online. Check the current `CI_ROUTING_STATE` timestamp/backend.
 3. Set `.github`'s `CI_RUNNER_SMOKE_ENABLED=true` and trigger the pilot PR workflow (manual dispatch works once the workflow exists on the default branch).
 4. Verify checkout/Python tests, filesystem isolation, actual cgroup bounds/private-network denial, fresh workspace on the next job, and the selected hosted job. Temporarily choose `github` and test again, then restore `automatic`. Test blocked/stale decisions locally without exhausting real quotas.
