@@ -31,6 +31,10 @@ jobs:
           test ! -r /home/sachin/.ssh/id_ed25519
           test ! -S /run/docker.sock
           test ! -e "$HOME/previous-job-marker"
+          test -r /run/vyamoh-ci-routing/state.json
+          test ! -w /run/vyamoh-ci-routing/state.json
+          test ! -w /run/vyamoh-ci-routing
+          gh --version
           touch "$HOME/previous-job-marker"
           python3 -m unittest discover -s tests -v
       - name: Check bounded resources and denied host networking
