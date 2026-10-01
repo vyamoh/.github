@@ -5,7 +5,7 @@ import json
 import os
 import tempfile
 import sys
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from pathlib import Path
 import unittest
 
@@ -83,6 +83,22 @@ class RolloutTests(unittest.TestCase):
         self.assertEqual(api.group["visibility"], "selected")
         self.assertIs(api.group["allows_public_repositories"], False)
         self.assertEqual(api.repositories, self.config["repository_ids"])
+
+    def test_status_variable_failure_preserves_fresh_local_routing(self):
+        api = MagicMock()
+        api.org = "vyamoh"
+        api.variable.return_value = "automatic"
+        api.publish.side_effect = RuntimeError("status API unavailable")
+        state = {"schema": 1, "backend": "blocked"}
+        with patch.object(controller.Path, "read_text", return_value=json.dumps(self.config)), \
+                patch.object(controller, "load_secrets", return_value={"GITHUB_APP_PRIVATE_KEY": "test", "BLACKSMITH_ORG_TOKEN": "test"}), \
+                patch.object(controller, "GitHub", return_value=api), \
+                patch.object(controller, "blacksmith_usage"), \
+                patch.object(controller, "decide", return_value=state), \
+                patch.object(controller, "write_state") as write:
+            controller.main()
+        write.assert_called_once_with(state, Path("/run/vyamoh-ci-routing/state.json"))
+        api.publish.assert_called_once_with(state)
 
     def test_published_local_state_is_complete_readable_and_replaced(self):
         with tempfile.TemporaryDirectory() as directory:
