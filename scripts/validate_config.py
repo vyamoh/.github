@@ -12,7 +12,11 @@ assert base["minimumReleaseAge"] == "7 days"
 assert base["internalChecksFilter"] == "strict"
 assert base["vulnerabilityAlerts"]["minimumReleaseAge"] is None
 assert base["rangeStrategy"] == "replace"
-assert not base.get("automerge", False)
+assert base["automerge"] is True
+assert base["automergeType"] == "pr"
+assert base["automergeStrategy"] == "rebase"
+assert base["platformAutomerge"] is False
+assert base["rebaseWhen"] == "auto"
 for path in (root / "workflow-templates").glob("*.properties.json"):
     definition = json.loads(path.read_text())
     assert definition["name"] and definition["description"]

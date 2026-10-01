@@ -28,7 +28,12 @@ Optional presets are `local>vyamoh/.github:renovate-node` and
 `local>vyamoh/.github:renovate-cloudflare`. The baseline delays normal updates
 seven days, allows security updates without that delay, preserves monthly
 lockfile maintenance and requires approval for major/TypeScript updates.
-It does not enable automerge. Third-party Actions are digest-pinned; first-party
+Renovate rebases and automatically merges eligible PRs after checks pass on an
+up-to-date branch. Renovate performs the merge on a subsequent bot run so its
+release-age checks remain part of the decision. Major/TypeScript updates still
+require dashboard approval before PR creation; after approval they can automerge.
+Consumers inherit this policy from the default branch without workflow updates.
+Third-party Actions are digest-pinned; first-party
 major release channels intentionally remain movable. Renovate policy does not
 replace each package manager's committed install-time cooldown.
 
