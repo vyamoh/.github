@@ -24,6 +24,9 @@ def ensure_group(api, config):
     if {r["id"] for r in repos} != set(config["repository_ids"]):
         api.call(base + f"/runner-groups/{group['id']}/repositories",
                  {"selected_repository_ids": config["repository_ids"]}, "PUT")
+        repos = api.pages(base + f"/runner-groups/{group['id']}/repositories", "repositories")
+        if {r["id"] for r in repos} != set(config["repository_ids"]):
+            raise ValueError("Runner group membership did not converge")
     return group
 
 
