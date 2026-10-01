@@ -11,6 +11,12 @@ The pilot passed isolation, fresh-job cleanup and real Blacksmith/GitHub routing
 
 Heavy jobs do not fall back to this small droplet until measured and explicitly classified as compatible. Nothing here changes the local Mac, application code, branch rules, Socket, Renovate, or model API billing.
 
+## Stable major-version contract
+
+This migration changes consumer wiring once. Callers use `vyamoh/.github/...@v1` and `vyamoh/review-swarm/...@v1`, never a shared patch tag or commit digest. Publishing a tested minor/patch release advances the matching `v1` channel centrally; consumers need no PR. Immutable `v1.x.y` tags remain for release history and rollback. Only an intentional `v2` adoption requires editing callers.
+
+Runner policy, provider selection, shared audits and swarm runtime evolve in their owning shared repository. Preserve the v1 input/output contract when changing them. Repo-specific tests and check identities remain local. Deploy controller changes once to the DO server where needed; that is independent of consumer repository releases.
+
 ## Policy and variables
 
 `config.json` is the reviewed policy, installed root-owned at `/opt/vyamoh-ci/config.json`.
