@@ -15,8 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  routing:
+    uses: ./.github/workflows/runner-select.yml
   validate:
-    runs-on: ubuntu-24.04
+    needs: routing
+    runs-on: ${{ fromJSON(needs.routing.outputs.runner) }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -36,11 +39,12 @@ jobs:
       - run: npm exec --yes --package=renovate@44.108.1 -- renovate-config-validator --strict renovate-config.json renovate-node.json renovate-cloudflare.json
   ci:
     name: ci
-    needs: validate
+    needs: [routing, validate]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, vyamoh-do-light]
     timeout-minutes: 5
     steps:
       - env:
           RESULT: ${{ needs.validate.result }}
-        run: test "$RESULT" = success
+          ROUTING_RESULT: ${{ needs.routing.result }}
+        run: test "$RESULT" = success && test "$ROUTING_RESULT" = success

@@ -11,9 +11,12 @@ Group=vyamoh-ci-router
 Environment=PYTHONDONTWRITEBYTECODE=1
 LoadCredential=infisical.env:/etc/vyamoh-ci-router/infisical.env
 ExecStart=/usr/bin/python3 /opt/vyamoh-ci/runner/controller.py
+RuntimeDirectory=vyamoh-ci-routing
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
 StateDirectory=vyamoh-ci-router
 StateDirectoryMode=0700
-ReadWritePaths=/var/lib/vyamoh-ci-router
+ReadWritePaths=/var/lib/vyamoh-ci-router /run/vyamoh-ci-routing
 InaccessiblePaths=/var/lib/vyamoh-ci
 CPUQuota=50%
 MemoryMax=256M

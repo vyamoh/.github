@@ -27,10 +27,13 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, os, sys
+          from pathlib import Path
           from datetime import datetime, timezone
           sys.path.insert(0, '/opt/vyamoh-ci/runner')
           from policy import select
-          state = json.loads(os.environ['ROUTING_STATE'] or '{}')
+          local_state = Path('/run/vyamoh-ci-routing/state.json')
+          raw_state = local_state.read_text() if local_state.exists() else os.environ['ROUTING_STATE']
+          state = json.loads(raw_state or '{}')
           runner = select(state, datetime.now(timezone.utc), os.environ['RUNNER_SIZE'])
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('runner=' + json.dumps(runner) + '\n')

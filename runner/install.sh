@@ -15,7 +15,7 @@ install -d -m 0700 -o vyamoh-ci -g vyamoh-ci /var/lib/vyamoh-ci
 
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get install -y --no-install-recommends \
-  ca-certificates curl git jq python3 python3-venv openssl libicu74 libssl3t64 zlib1g libkrb5-3 liblttng-ust1t64
+  ca-certificates curl git gh jq python3 python3-venv openssl libicu74 libssl3t64 zlib1g libkrb5-3 liblttng-ust1t64
 
 temporary=$(mktemp -d /opt/vyamoh-ci/download.XXXXXXXX)
 trap 'rm -rf -- "$temporary"' EXIT

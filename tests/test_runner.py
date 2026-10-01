@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import tempfile
+import sys
 from unittest.mock import patch
 from pathlib import Path
 import unittest
@@ -21,6 +22,78 @@ provider_spec.loader.exec_module(providers)
 worker_spec = importlib.util.spec_from_file_location("runner_worker", ROOT / "runner/worker.py")
 worker = importlib.util.module_from_spec(worker_spec)
 worker_spec.loader.exec_module(worker)
+
+sys.path.insert(0, str(ROOT / "runner"))
+try:
+    import broker
+    import controller
+finally:
+    sys.path.pop(0)
+
+
+class GroupApi:
+    org = "vyamoh"
+
+    def __init__(self, group=None, repositories=None):
+        self.group = group
+        self.repositories = repositories or []
+        self.writes = []
+
+    def pages(self, path, key):
+        if key == "runner_groups":
+            return [self.group] if self.group else []
+        return [{"id": item} for item in self.repositories]
+
+    def call(self, path, body, method):
+        self.writes.append((path, body, method))
+        self.repositories = body["selected_repository_ids"]
+        if method == "POST":
+            self.group = {"id": 9, **body}
+            return self.group
+
+
+class RolloutTests(unittest.TestCase):
+    def setUp(self):
+        self.config = json.loads((ROOT / "runner/config.json").read_text())
+        self.group = {"id": 9, "name": self.config["runner_group"],
+                      "visibility": "selected", "allows_public_repositories": False}
+
+    def test_selected_membership_reconciles_to_reviewed_config(self):
+        api = GroupApi(self.group, [1398819082, 99])
+        broker.ensure_group(api, self.config)
+        self.assertEqual(api.repositories, self.config["repository_ids"])
+        self.assertEqual(api.writes[0][2], "PUT")
+        self.assertEqual(api.writes[0][0], "orgs/vyamoh/actions/runner-groups/9/repositories")
+
+    def test_matching_group_needs_no_write(self):
+        api = GroupApi(self.group, self.config["repository_ids"])
+        broker.ensure_group(api, self.config)
+        self.assertEqual(api.writes, [])
+
+    def test_public_or_all_repository_group_is_refused(self):
+        for changed in [{"visibility": "all"}, {"allows_public_repositories": True}]:
+            api = GroupApi({**self.group, **changed})
+            with self.assertRaises(ValueError):
+                broker.ensure_group(api, self.config)
+            self.assertEqual(api.writes, [])
+
+    def test_group_creation_is_private_and_selected(self):
+        api = GroupApi()
+        broker.ensure_group(api, self.config)
+        self.assertEqual(api.group["visibility"], "selected")
+        self.assertIs(api.group["allows_public_repositories"], False)
+        self.assertEqual(api.repositories, self.config["repository_ids"])
+
+    def test_published_local_state_is_complete_readable_and_replaced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "state.json"
+            destination.write_text('{"old":true}')
+            state = {"schema": 1, "backend": "github", "expires_at": 123}
+            controller.write_state(state, destination)
+            self.assertEqual(json.loads(destination.read_text()), state)
+            self.assertEqual(destination.stat().st_mode & 0o777, 0o644)
+            self.assertFalse(destination.with_suffix(".new").exists())
+
 
 
 class WorkerStorageTests(unittest.TestCase):
