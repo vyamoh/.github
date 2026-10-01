@@ -1,0 +1,38 @@
+name: Select Linux runner
+
+on:
+  workflow_call:
+    inputs:
+      size:
+        type: string
+        default: 2vcpu
+    outputs:
+      runner:
+        value: ${{ jobs.select.outputs.runner }}
+
+permissions: {}
+
+jobs:
+  select:
+    runs-on: [self-hosted, Linux, X64, vyamoh-do-light]
+    timeout-minutes: 2
+    outputs:
+      runner: ${{ steps.route.outputs.runner }}
+    steps:
+      - name: Validate current routing state
+        id: route
+        env:
+          ROUTING_STATE: ${{ vars.CI_ROUTING_STATE }}
+          RUNNER_SIZE: ${{ inputs.size }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from datetime import datetime, timezone
+          sys.path.insert(0, '/opt/vyamoh-ci/runner')
+          from policy import select
+          state = json.loads(os.environ['ROUTING_STATE'] or '{}')
+          runner = select(state, datetime.now(timezone.utc), os.environ['RUNNER_SIZE'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('runner=' + json.dumps(runner) + '\n')
+          print('Selected ' + state['backend'] + ': ' + state['reason'])
+          PY

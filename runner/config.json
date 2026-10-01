@@ -1,0 +1,15 @@
+{
+  "organization": "vyamoh",
+  "app_id": 5144130,
+  "installation_id": 166729174,
+  "budget_id": "bba0ba85-570e-4f72-b97a-b1d0107be921",
+  "github_budget_usd": 5,
+  "github_reserve_usd": 0.5,
+  "blacksmith_allowance_billing_minutes": 6000,
+  "blacksmith_reserve_billing_minutes": 600,
+  "state_ttl_seconds": 600,
+  "runner_group": "vyamoh-do-light",
+  "runner_name": "t3-remote-light",
+  "runner_labels": ["self-hosted", "Linux", "X64", "vyamoh-do-light"],
+  "repository_ids": [1398819082]
+}

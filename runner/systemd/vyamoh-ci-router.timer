@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Vyamoh CI routing every two minutes
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=2min
+RandomizedDelaySec=10s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

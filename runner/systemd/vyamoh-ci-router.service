@@ -1,0 +1,41 @@
+[Unit]
+Description=Vyamoh CI router
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=vyamoh-ci-router
+Group=vyamoh-ci-router
+Environment=PYTHONDONTWRITEBYTECODE=1
+LoadCredential=infisical.env:/etc/vyamoh-ci-router/infisical.env
+ExecStart=/usr/bin/python3 /opt/vyamoh-ci/runner/controller.py
+StateDirectory=vyamoh-ci-router
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/vyamoh-ci-router
+InaccessiblePaths=/var/lib/vyamoh-ci
+CPUQuota=50%
+MemoryMax=256M
+MemorySwapMax=128M
+TasksMax=64
+TimeoutStartSec=180
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ProtectProc=invisible
+LimitCORE=0

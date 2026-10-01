@@ -1,0 +1,51 @@
+name: Runner smoke test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - runner/**
+      - tests/test_runner.py
+      - .github/workflows/runner-*.yml
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    if: vars.CI_RUNNER_SMOKE_ENABLED == 'true'
+    runs-on: [self-hosted, Linux, X64, vyamoh-do-light]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Check host and credential isolation
+        run: |
+          test "$(id -u)" = 997
+          test ! -r /etc/vyamoh-ci-router/infisical.env
+          test ! -r /var/lib/vyamoh-ci-router/jit.json
+          test ! -r /home/sachin/.ssh/id_ed25519
+          test ! -S /run/docker.sock
+          test ! -e "$HOME/previous-job-marker"
+          touch "$HOME/previous-job-marker"
+          test "$(stat -f -c %T /var/lib/vyamoh-ci)" = tmpfs
+          python3 -m unittest discover -s tests -v
+      - name: Check bounded resources and denied host networking
+        run: |
+          python3 runner/smoke.py
+  fresh-worker:
+    needs: isolation
+    runs-on: [self-hosted, Linux, X64, vyamoh-do-light]
+    timeout-minutes: 2
+    steps:
+      - run: test ! -e "$HOME/previous-job-marker"
+  routing:
+    needs: fresh-worker
+    uses: ./.github/workflows/runner-select.yml
+  hosted:
+    needs: routing
+    runs-on: ${{ fromJSON(needs.routing.outputs.runner) }}
+    timeout-minutes: 2
+    steps:
+      - run: uname -a
