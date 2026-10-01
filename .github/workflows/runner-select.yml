@@ -19,6 +19,15 @@ jobs:
     outputs:
       runner: ${{ steps.route.outputs.runner }}
     steps:
+      - name: Reject fork pull requests
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [[ "$EVENT_NAME" == pull_request || "$EVENT_NAME" == pull_request_target ]]; then
+            test "$HEAD_REPOSITORY" = "$REPOSITORY"
+          fi
       - name: Validate current routing state
         id: route
         env:
