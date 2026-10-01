@@ -65,6 +65,12 @@ class RolloutTests(unittest.TestCase):
         self.assertEqual(api.writes[0][2], "PUT")
         self.assertEqual(api.writes[0][0], "orgs/vyamoh/actions/runner-groups/9/repositories")
 
+    def test_unconfirmed_membership_refuses_registration(self):
+        api = GroupApi(self.group, [99])
+        with patch.object(api, "call"):
+            with self.assertRaisesRegex(ValueError, "did not converge"):
+                broker.ensure_group(api, self.config)
+
     def test_matching_group_needs_no_write(self):
         api = GroupApi(self.group, self.config["repository_ids"])
         broker.ensure_group(api, self.config)
