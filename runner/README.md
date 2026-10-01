@@ -25,7 +25,7 @@ Runner policy, provider selection, shared audits and swarm runtime evolve in the
 - `CI_ROUTING_OVERRIDE`: optional organization variable: `automatic` (default), `github`, `blacksmith`, or `blocked`. A provider override still requires valid usage and its allowance. Unknown values block heavy work. This is a temporary operational switch, not permission to exceed a budget.
 - `CI_RUNNER_SMOKE_ENABLED`: `.github` repository variable, `true` only while testing the pilot. Enables `Runner smoke test` on PRs and manual dispatch.
 
-Consumer workflows call `.github/workflows/runner-select.yml@<release>` on DO, then use `fromJSON(needs.routing.outputs.runner)` on heavy jobs. The selector executes root-owned installed policy, without checking out PR code or receiving provider credentials. Sizes `2vcpu` and `4vcpu` select their Blacksmith SKU; both use standard `ubuntu-24.04` on GitHub. Cheap jobs use `[self-hosted, Linux, X64, vyamoh-do-light]` directly.
+Consumer workflows call `.github/workflows/runner-select.yml@v1` on DO, then use `fromJSON(needs.routing.outputs.runner)` on heavy jobs. The selector executes root-owned installed policy, without checking out PR code or receiving provider credentials. Sizes `2vcpu` and `4vcpu` select their Blacksmith SKU; both use standard `ubuntu-24.04` on GitHub. Cheap jobs use `[self-hosted, Linux, X64, vyamoh-do-light]` directly.
 
 Existing aggregate gates must include the selector in `needs` and reject failed/skipped prerequisites. A skipped heavy job must never make its required `ci` gate pass. Keep all existing job IDs/names and repo-specific gates during migration. Repo/environment variables with these names override organization variables, so remove conflicting overrides before rollout.
 
@@ -59,11 +59,11 @@ The GitHub runner is pinned at 2.337.0. Blacksmith's published `latest` Linux ar
 After installation:
 
 1. Verify `gh`, `jq` and `python3` are installed for light gates. Verify `systemctl status vyamoh-ci-{router,cycle,worker}` and `journalctl --namespace=vyamoh-ci -u vyamoh-ci-router -u vyamoh-ci-broker`. Do not print credentials or runner diagnostic credential files.
-2. Verify the runner group contains only `.github` and the worker is online. Check the current `CI_ROUTING_STATE` timestamp/backend.
+2. Verify the private-only selected runner group matches exactly the ten `repository_ids` in the reviewed configuration and the worker is online. Check the local routing state timestamp/backend and confirm the CI account can read but cannot replace it.
 3. Set `.github`'s `CI_RUNNER_SMOKE_ENABLED=true` and trigger the pilot PR workflow (manual dispatch works once the workflow exists on the default branch).
 4. Verify checkout/Python tests, filesystem isolation, actual cgroup bounds/private-network denial, fresh workspace on the next job, and the selected hosted job. Temporarily choose `github` and test again, then restore `automatic`. Test blocked/stale decisions locally without exhausting real quotas.
 5. Check memory/disk pressure, cleanup, service restart/recovery and T3/previews before and after. Reboot recovery needs a coordinated reboot; do not reboot an active server solely to test this.
-6. Only then expand the reviewed repository-ID list and selected runner-group repository access together, release the reusable selector, and create consumer PRs preserving existing checks. Measure workloads before moving anything beyond simple checks/aggregation onto DO.
+6. Only after server verification, publish the compatible shared release and create consumer PRs preserving existing checks. Measure workloads before moving anything beyond simple checks/aggregation onto DO.
 
 To halt the pilot, disable `vyamoh-ci-cycle.service` and `vyamoh-ci-router.timer` with `systemctl disable --now`, and stop `vyamoh-ci-worker.service`. Delete the dedicated runner/group and routing variables if retiring the feature. Do not delete unrelated runner groups. For rollout rollback, restore previous workflow runner labels first; merely stopping the service would leave migrated jobs queued. Before updating installed code, stop the cycle/controller/worker as the installer does.
 
