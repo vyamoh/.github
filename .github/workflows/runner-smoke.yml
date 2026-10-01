@@ -30,6 +30,8 @@ jobs:
           test ! -r /var/lib/vyamoh-ci-router/jit.json
           test ! -r /home/sachin/.ssh/id_ed25519
           test ! -S /run/docker.sock
+          stat -f -c 'Worker filesystem: %T' /var/lib/vyamoh-ci
+          findmnt --target /var/lib/vyamoh-ci
           test ! -e "$HOME/previous-job-marker"
           touch "$HOME/previous-job-marker"
           test "$(stat -f -c %T /var/lib/vyamoh-ci)" = tmpfs
