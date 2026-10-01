@@ -1,0 +1,40 @@
+[Unit]
+Description=Vyamoh one-job runner lifecycle
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/python3 /opt/vyamoh-ci/runner/cycle.py
+ExecStopPost=/usr/bin/systemctl stop vyamoh-ci-worker.service
+Restart=always
+RestartSec=30s
+RuntimeDirectory=vyamoh-ci-cycle
+RuntimeDirectoryMode=0700
+ReadWritePaths=/run/vyamoh-ci-cycle /var/lib/vyamoh-ci-router
+InaccessiblePaths=/var/lib/vyamoh-ci
+TimeoutStopSec=60s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=CAP_DAC_OVERRIDE
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ProtectProc=invisible
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target

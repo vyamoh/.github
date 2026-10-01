@@ -1,0 +1,52 @@
+[Unit]
+Description=Vyamoh isolated ephemeral light worker
+After=network-online.target
+
+[Service]
+Type=exec
+User=vyamoh-ci
+Group=vyamoh-ci
+Environment=HOME=/var/lib/vyamoh-ci/home
+Environment=TMPDIR=/var/lib/vyamoh-ci/tmp
+Environment=RUNNER_TOOL_CACHE=/var/lib/vyamoh-ci/toolcache
+Environment=PATH=/usr/bin:/bin
+Environment=PYTHONDONTWRITEBYTECODE=1
+LoadCredential=jit:/run/vyamoh-ci-cycle/jit
+TemporaryFileSystem=/var/lib/vyamoh-ci:rw,size=1G,mode=0700,uid=997,gid=987
+BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/bin:/var/lib/vyamoh-ci/runner/bin
+BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/externals:/var/lib/vyamoh-ci/runner/externals
+ExecStart=/usr/bin/python3 /opt/vyamoh-ci/runner/worker.py
+InaccessiblePaths=/etc/vyamoh-ci-router /var/lib/vyamoh-ci-router /run/user /run/vyamoh-ci-cycle
+InaccessiblePaths=-/etc/restic -/var/backups -/var/log -/run/dbus -/run/docker.sock
+ReadWritePaths=/var/lib/vyamoh-ci
+IPAddressDeny=localhost link-local multicast 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 fc00::/7
+IPAddressAllow=127.0.0.53/32
+CPUQuota=100%
+CPUWeight=10
+MemoryHigh=768M
+MemoryMax=1G
+MemorySwapMax=512M
+TasksMax=256
+RuntimeMaxSec=1h
+TimeoutStopSec=30s
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ProtectProc=invisible
+LimitCORE=0
