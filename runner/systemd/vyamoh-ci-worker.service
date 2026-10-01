@@ -19,7 +19,6 @@ BindReadOnlyPaths=/opt/vyamoh-ci/runner-dist/externals:/var/lib/vyamoh-ci/extern
 ExecStart=/usr/bin/python3 /opt/vyamoh-ci/runner/worker.py
 InaccessiblePaths=/etc/vyamoh-ci-router /var/lib/vyamoh-ci-router /run/user /run/vyamoh-ci-cycle
 InaccessiblePaths=-/etc/restic -/var/backups -/var/log -/run/dbus -/run/docker.sock
-ReadWritePaths=/var/lib/vyamoh-ci
 IPAddressDeny=localhost link-local multicast 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 fc00::/7
 IPAddressAllow=127.0.0.53/32
 CPUQuota=100%
