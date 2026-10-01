@@ -82,7 +82,9 @@
       "ci": "ci",
       "socket": true,
       "swarm": false,
-      "extra_checks": [],
+      "extra_checks": [
+        "validate"
+      ],
       "retire_rulesets": [
         23225995
       ]
