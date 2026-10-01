@@ -32,8 +32,11 @@ def main():
         print(f"GitHub usage unavailable ({type(exc).__name__})", flush=True)
     override = github.variable("CI_ROUTING_OVERRIDE") or "automatic"
     state = decide(config, now, blacksmith, usage, budgets, override)
-    github.publish(state)
     write_state(state, Path("/run/vyamoh-ci-routing/state.json"))
+    try:
+        github.publish(state)
+    except Exception as exc:
+        print(f"Routing status variable unavailable ({type(exc).__name__})", flush=True)
     print(json.dumps(state), flush=True)
 
 
