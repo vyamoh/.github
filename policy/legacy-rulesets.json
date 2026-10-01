@@ -141,14 +141,6 @@
             {
               "context": "Swarm approval",
               "integration_id": 15368
-            },
-            {
-              "context": "Publish swarm report",
-              "integration_id": 15368
-            },
-            {
-              "context": "review-swarm",
-              "integration_id": 15368
             }
           ]
         }
