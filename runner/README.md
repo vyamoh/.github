@@ -33,7 +33,7 @@ These reserves are conservative estimates, not reservations. Provider reports ca
 
 The broker authenticates afresh with Infisical and the GitHub App, registers a JIT runner, and refuses a duplicate online runner or unexpected runner-group access. It can remove only the offline registration matching this worker's fixed name. The runner is ephemeral and handles one job. A previous offline registration is cleaned up before retrying. The group starts selected/private-only with `.github`'s repository ID.
 
-`vyamoh-ci-worker.service` runs as `vyamoh-ci`, with no sudo, host Docker socket or provider credentials. It has one CPU, 768 MiB memory soft pressure, 1 GiB RAM maximum, 512 MiB swap maximum and 256 tasks. Its home, workspace, tool cache and temporary files live in fresh bounded storage; runner binaries are mounted read-only. Systemd removes this storage and kills descendant processes at job completion or the one-hour service limit. No persistent runner cache is shared between jobs.
+`vyamoh-ci-worker.service` runs as `vyamoh-ci`, with no sudo, host Docker socket or provider credentials. It has one CPU, 768 MiB memory soft pressure, 1 GiB RAM maximum, 512 MiB swap maximum and 256 tasks. Its home, workspace, tool cache and temporary files live in fresh bounded storage; runner binaries are mounted read-only. Systemd removes this storage and kills descendant processes at job completion or the one-hour service limit. A separate `vyamoh-ci` journal is rate-limited, capped at 64 MiB persistent/16 MiB runtime storage, and retained for at most seven days. New worker cycles require 5 GiB free disk and 1 GiB available RAM; failures retry without running work. No persistent runner cache is shared between jobs.
 
 Host homes, router state, credentials and common service sockets are hidden. Private, loopback, link-local, Tailscale and host-interface IPs are denied, with the systemd DNS stub allowed. `smoke.py` verifies actual network denial rather than assuming the kernel attached the policy. This is native systemd isolation sharing the host kernel, not a VM boundary. Only trusted private repositories belong in the group. Public/fork work is not an intended workload.
 
@@ -42,7 +42,7 @@ Provider credentials come from `t3-remote / Production /runner-router` in Infisi
 - `GITHUB_APP_PRIVATE_KEY` for app `5144130`, installation `166729174`.
 - `BLACKSMITH_ORG_TOKEN` passed only to the controller's CLI subprocess.
 
-`/etc/vyamoh-ci-router/infisical.env` remains root-only, delivered to the broker/controller through `LoadCredential`. The worker receives only its JIT credential through a separate `LoadCredential`; it does not receive the App token, key, Blacksmith token or Infisical login. Access tokens expire within one hour. Fetching each invocation picks up secrets rotated in Infisical without personal login. The approved Infisical Viewer identity can also read backup secrets because folder restriction requires Pro; the code requests only `/runner-router` without imports, recursion or expansion.
+`/etc/vyamoh-ci-router/infisical.env` remains root-only, delivered to the broker/controller through `LoadCredential`. The worker receives only its JIT credential through a separate `LoadCredential`; it does not receive the App token, key, Blacksmith token or Infisical login. Job code shares the runner UID and can read its own one-job runner credential. Access tokens expire within one hour. Fetching each invocation picks up secrets rotated in Infisical without personal login. A missing Blacksmith token disables that provider without preventing DO registration or GitHub fallback. The approved Infisical Viewer identity can also read backup secrets because folder restriction requires Pro; the code requests only `/runner-router` without imports, recursion or expansion.
 
 ## Installation and verification
 
@@ -52,7 +52,7 @@ The GitHub runner is pinned at 2.337.0. Blacksmith's published `latest` Linux ar
 
 After installation:
 
-1. Verify `systemctl status vyamoh-ci-{router,cycle,worker}` and `journalctl -u vyamoh-ci-router -u vyamoh-ci-broker`. Do not print credentials or runner diagnostic credential files.
+1. Verify `systemctl status vyamoh-ci-{router,cycle,worker}` and `journalctl --namespace=vyamoh-ci -u vyamoh-ci-router -u vyamoh-ci-broker`. Do not print credentials or runner diagnostic credential files.
 2. Verify the runner group contains only `.github` and the worker is online. Check the current `CI_ROUTING_STATE` timestamp/backend.
 3. Set `.github`'s `CI_RUNNER_SMOKE_ENABLED=true` and trigger the pilot PR workflow (manual dispatch works once the workflow exists on the default branch).
 4. Verify checkout/Python tests, filesystem isolation, actual cgroup bounds/private-network denial, fresh workspace on the next job, and the selected hosted job. Temporarily choose `github` and test again, then restore `automatic`. Test blocked/stale decisions locally without exhausting real quotas.

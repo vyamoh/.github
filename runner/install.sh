@@ -28,8 +28,14 @@ curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
   -o "$temporary/blacksmith"
 printf '%s  %s\n' cb81f90fc4035a0c6b9338e9ccd17d6aaae6eda020665cd51c635b228e6a7598 "$temporary/blacksmith" | sha256sum --check
 
-systemctl stop vyamoh-ci-router.timer vyamoh-ci-cycle.service vyamoh-ci-worker.service 2>/dev/null || true
-systemctl stop vyamoh-ci-router.service vyamoh-ci-broker.service 2>/dev/null || true
+units=(vyamoh-ci-router.timer vyamoh-ci-cycle.service vyamoh-ci-worker.service vyamoh-ci-router.service vyamoh-ci-broker.service)
+for unit in "${units[@]}"; do
+  if [[ $(systemctl show "$unit" --property=LoadState --value) != not-found ]]; then
+    systemctl stop "$unit"
+    state=$(systemctl show "$unit" --property=ActiveState --value)
+    [[ $state == inactive || $state == failed ]] || { echo "Could not stop $unit" >&2; exit 1; }
+  fi
+done
 install -m 0755 -o root -g root "$temporary/blacksmith" /opt/vyamoh-ci/bin/blacksmith
 mkdir "$temporary/runner-dist"
 tar --extract --gzip --file "$temporary/runner.tgz" --directory "$temporary/runner-dist" --no-same-owner
@@ -41,6 +47,7 @@ mv "$temporary/runner-dist" /opt/vyamoh-ci/runner-dist
 chmod -R go-w /opt/vyamoh-ci/runner-dist
 install -m 0644 -o root -g root "$source_dir/"*.py /opt/vyamoh-ci/runner/
 install -m 0644 -o root -g root "$source_dir/config.json" /opt/vyamoh-ci/config.json
+install -m 0644 -o root -g root "$source_dir/journald.conf" /etc/systemd/journald@vyamoh-ci.conf
 install -m 0644 -o root -g root "$source_dir/systemd/"* /etc/systemd/system/
 
 install -d -m 0755 /etc/systemd/system/vyamoh-ci-worker.service.d
@@ -57,6 +64,7 @@ Path("/etc/systemd/system/vyamoh-ci-worker.service.d/host-addresses.conf").write
     "[Service]\n" + "".join("IPAddressDeny=" + value + "\n" for value in addresses))
 '
 systemctl daemon-reload
+systemctl try-restart systemd-journald@vyamoh-ci.service
 systemd-analyze verify /etc/systemd/system/vyamoh-ci-{router,broker,worker,cycle}.service /etc/systemd/system/vyamoh-ci-router.timer
 systemctl start vyamoh-ci-router.service
 systemctl enable --now vyamoh-ci-router.timer vyamoh-ci-cycle.service

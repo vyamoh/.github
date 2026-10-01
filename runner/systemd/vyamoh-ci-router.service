@@ -4,6 +4,7 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
+LogNamespace=vyamoh-ci
 Type=oneshot
 User=vyamoh-ci-router
 Group=vyamoh-ci-router
