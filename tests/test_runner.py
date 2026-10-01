@@ -18,6 +18,30 @@ provider_spec = importlib.util.spec_from_file_location("runner_providers", ROOT 
 providers = importlib.util.module_from_spec(provider_spec)
 provider_spec.loader.exec_module(providers)
 
+worker_spec = importlib.util.spec_from_file_location("runner_worker", ROOT / "runner/worker.py")
+worker = importlib.util.module_from_spec(worker_spec)
+worker_spec.loader.exec_module(worker)
+
+
+class WorkerStorageTests(unittest.TestCase):
+    def test_persistent_host_mount_refuses_jobs(self):
+        with self.assertRaisesRegex(RuntimeError, "refusing jobs"):
+            worker.require_tmpfs(
+                "123 45 252:1 /var/lib/vyamoh-ci /var/lib/vyamoh-ci rw - ext4 /dev/vda1 rw",
+                Path("/var/lib/vyamoh-ci"))
+
+    def test_expected_tmpfs_accepts_jobs(self):
+        worker.require_tmpfs("123 45 0:99 / /var/lib/vyamoh-ci rw - tmpfs tmpfs rw,size=1048576k",
+                             Path("/var/lib/vyamoh-ci"))
+
+    def test_missing_mount_refuses_jobs(self):
+        with self.assertRaisesRegex(RuntimeError, "refusing jobs"):
+            worker.require_tmpfs("123 45 0:99 / /tmp rw - tmpfs tmpfs rw", Path("/var/lib/vyamoh-ci"))
+
+    def test_tmpfs_path_has_no_competing_mount_directive(self):
+        unit = (ROOT / "runner/systemd/vyamoh-ci-worker.service").read_text()
+        self.assertNotIn("ReadWritePaths=/var/lib/vyamoh-ci", unit)
+
 
 class CredentialTests(unittest.TestCase):
     def load(self, secrets, include_blacksmith=False, lifetime=3600):
